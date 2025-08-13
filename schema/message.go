@@ -131,6 +131,22 @@ type ToolCall struct {
 	Extra map[string]any `json:"extra,omitempty"`
 }
 
+func (toolCall ToolCall) Copy() ToolCall {
+	var index *int
+	if toolCall.Index != nil {
+		index = new(int)
+		*index = *toolCall.Index
+	}
+
+	return ToolCall{
+		Index:    index,
+		ID:       toolCall.ID,
+		Type:     toolCall.Type,
+		Function: toolCall.Function,
+		Extra:    toolCall.Extra,
+	}
+}
+
 // ImageURLDetail is the detail of the image url.
 type ImageURLDetail string
 
@@ -313,6 +329,41 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// ID is the id of the message.
+	ID string `json:"id,omitempty"`
+	// IsError indicates whether the message is an error message. The error message is saved to the Content.
+	IsError bool `json:"is_error,omitempty"`
+	// Only for ToolMessage. ToolCallResult is the result of the tool call.
+	ToolCallResult ToolInvocationResult `json:"tool_call_result,omitempty"`
+	// CompressedContent is the compressed content for the content.
+	CompressedContent string `json:"compressed_content,omitempty"`
+	// CompressedResponseMeta is the compressed response meta for the CompressedContent.
+	CompressedResponseMeta *ResponseMeta `json:"compressed_response_meta,omitempty"`
+}
+
+func (message *Message) Copy() *Message {
+	var toolCalls []ToolCall
+	for _, toolCall := range message.ToolCalls {
+		toolCalls = append(toolCalls, toolCall.Copy())
+	}
+
+	return &Message{
+		Role:                   message.Role,
+		Content:                message.Content,
+		MultiContent:           append([]ChatMessagePart(nil), message.MultiContent...),
+		Name:                   message.Name,
+		ToolCalls:              toolCalls,
+		ToolCallID:             message.ToolCallID,
+		ToolName:               message.ToolName,
+		ResponseMeta:           message.ResponseMeta,
+		ReasoningContent:       message.ReasoningContent,
+		Extra:                  message.Extra,
+		ID:                     message.ID,
+		IsError:                message.IsError,
+		CompressedContent:      message.CompressedContent,
+		CompressedResponseMeta: message.CompressedResponseMeta,
+	}
 }
 
 // TokenUsage Represents the token usage of chat model request.
