@@ -25,6 +25,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/nikolalohinski/gonja"
 	"github.com/nikolalohinski/gonja/config"
@@ -112,6 +113,8 @@ type FunctionCall struct {
 	Name string `json:"name,omitempty"`
 	// Arguments is the arguments to call the function with, in JSON format.
 	Arguments string `json:"arguments,omitempty"`
+
+	ParsedArguments any `json:"-"`
 }
 
 // ToolCall is the tool call in a message.
@@ -464,6 +467,25 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// ID is the id of the message.
+	ID string `json:"-"`
+	// StreamID is the id for a stream call.
+	StreamID string `json:"-"`
+	// IsError indicates whether the message is an error message. The error message is saved to the Content.
+	IsError bool `json:"-"`
+	// Only for ToolMessage. ToolCallResult is the result of the tool call.
+	ToolCallResult ToolInvocationResult `json:"-"`
+	// AccumulatedCompressedContent is the compressed content for all the previous messages.
+	AccumulatedCompressedContent string `json:"-"`
+	// AccumulatedCompressedResponseMeta is the compressed response meta for the AccumulatedCompressedContent.
+	AccumulatedCompressedResponseMeta *ResponseMeta `json:"-"`
+	// IsForkedMessagesEndIndex indicates whether this is the end index of the forked messages
+	IsForkedMessagesEndIndex bool `json:"-"`
+	// CommitIDs is the git commit ids for all projects, key is project_name, value is commit_id
+	CommitIDs map[string]string `json:"-"`
+	// CreatedAt is when this messsage is added
+	CreatedAt time.Time `json:"-"`
 }
 
 // TokenUsage Represents the token usage of chat model request.
