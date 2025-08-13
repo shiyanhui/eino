@@ -313,6 +313,37 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// ID is the id of the message.
+	ID string `json:"-"`
+	// IsError indicates whether the message is an error message. The error message is saved to the Content.
+	IsError bool `json:"-"`
+	// CompressedContent is the compressed content of the message.
+	CompressedContent string `json:"-"`
+	// CompressedToolCalls is the compressed tool calls of the message.
+	CompressedToolCalls []ToolCall `json:"-"`
+	// CompressedResponseMeta is the compressed response meta of the message.
+	CompressedResponseMeta *ResponseMeta `json:"-"`
+}
+
+func (message *Message) Copy() *Message {
+	return &Message{
+		Role:                   message.Role,
+		Content:                message.Content,
+		MultiContent:           append([]ChatMessagePart{}, message.MultiContent...),
+		Name:                   message.Name,
+		ToolCalls:              append([]ToolCall{}, message.ToolCalls...),
+		ToolCallID:             message.ToolCallID,
+		ToolName:               message.ToolName,
+		ResponseMeta:           message.ResponseMeta,
+		ReasoningContent:       message.ReasoningContent,
+		Extra:                  message.Extra,
+		ID:                     message.ID,
+		IsError:                message.IsError,
+		CompressedContent:      message.CompressedContent,
+		CompressedToolCalls:    append([]ToolCall{}, message.CompressedToolCalls...),
+		CompressedResponseMeta: message.CompressedResponseMeta,
+	}
 }
 
 // TokenUsage Represents the token usage of chat model request.
