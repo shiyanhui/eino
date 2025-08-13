@@ -73,6 +73,11 @@ type ToolInfo struct {
 	//  - use openAPIV3: schema.NewParamsOneOfByOpenAPIV3(openAPIV3)
 	// If is nil, signals that the tool does not need any input parameter
 	*ParamsOneOf
+
+	// IsEnabled indicates whether the tool is enabled.
+	IsEnabled bool
+	// IsReadOnly indicates whether the tool is read only.
+	IsReadOnly bool
 }
 
 // ParameterInfo is the information of a parameter.
