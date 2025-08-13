@@ -112,6 +112,8 @@ type FunctionCall struct {
 	Name string `json:"name,omitempty"`
 	// Arguments is the arguments to call the function with, in JSON format.
 	Arguments string `json:"arguments,omitempty"`
+
+	ParsedArguments any `json:"-"`
 }
 
 // ToolCall is the tool call in a message.
@@ -129,6 +131,22 @@ type ToolCall struct {
 
 	// Extra is used to store extra information for the tool call.
 	Extra map[string]any `json:"extra,omitempty"`
+}
+
+func (toolCall ToolCall) Copy() ToolCall {
+	var index *int
+	if toolCall.Index != nil {
+		index = new(int)
+		*index = *toolCall.Index
+	}
+
+	return ToolCall{
+		Index:    index,
+		ID:       toolCall.ID,
+		Type:     toolCall.Type,
+		Function: toolCall.Function,
+		Extra:    toolCall.Extra,
+	}
 }
 
 // ImageURLDetail is the detail of the image url.
@@ -313,6 +331,48 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// ID is the id of the message.
+	ID string `json:"id,omitempty"`
+	// IsError indicates whether the message is an error message. The error message is saved to the Content.
+	IsError bool `json:"is_error,omitempty"`
+	// Only for ToolMessage. ToolCallResult is the result of the tool call.
+	ToolCallResult ToolInvocationResult `json:"tool_call_result,omitempty"`
+	// CompressedContent is the compressed content for the current message's content.
+	CompressedContent string `json:"compressed_content,omitempty"`
+	// CompressedResponseMeta is the compressed response meta for the current message's content.
+	CompressedResponseMeta *ResponseMeta `json:"compressed_response_meta,omitempty"`
+	// AccumulatedCompressedContent is the compressed content for all the previous messages.
+	AccumulatedCompressedContent string `json:"accumulated_compressed_content,omitempty"`
+	// AccumulatedCompressedResponseMeta is the compressed response meta for the AccumulatedCompressedContent.
+	AccumulatedCompressedResponseMeta *ResponseMeta `json:"accumulated_compressed_response_meta,omitempty"`
+}
+
+func (message *Message) Copy() *Message {
+	var toolCalls []ToolCall
+	for _, toolCall := range message.ToolCalls {
+		toolCalls = append(toolCalls, toolCall.Copy())
+	}
+
+	return &Message{
+		Role:                              message.Role,
+		Content:                           message.Content,
+		MultiContent:                      append([]ChatMessagePart(nil), message.MultiContent...),
+		Name:                              message.Name,
+		ToolCalls:                         toolCalls,
+		ToolCallID:                        message.ToolCallID,
+		ToolName:                          message.ToolName,
+		ResponseMeta:                      message.ResponseMeta,
+		ReasoningContent:                  message.ReasoningContent,
+		Extra:                             message.Extra,
+		ID:                                message.ID,
+		IsError:                           message.IsError,
+		ToolCallResult:                    message.ToolCallResult,
+		CompressedContent:                 message.CompressedContent,
+		CompressedResponseMeta:            message.CompressedResponseMeta,
+		AccumulatedCompressedContent:      message.AccumulatedCompressedContent,
+		AccumulatedCompressedResponseMeta: message.AccumulatedCompressedResponseMeta,
+	}
 }
 
 // TokenUsage Represents the token usage of chat model request.
