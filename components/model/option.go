@@ -37,6 +37,11 @@ type Options struct {
 	// AllowedToolNames specifies a list of tool names that the model is allowed to call.
 	// This allows for constraining the model to a specific subset of the available tools.
 	AllowedToolNames []string
+
+	// ModelOptionsList is the extra options for different model.
+	ModelOptionsList []*ModelOptions
+	// Extra options
+	Extra map[string]any
 }
 
 // Option is the call option for ChatModel component.
