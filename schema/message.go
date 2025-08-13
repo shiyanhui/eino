@@ -289,6 +289,8 @@ type ResponseMeta struct {
 }
 
 type Message struct {
+	ID      string   `json:"id"`
+
 	Role    RoleType `json:"role"`
 	Content string   `json:"content"`
 
@@ -313,6 +315,9 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// IsError indicates whether the message is an error message. The error message is saved to the Content.
+	IsError bool `json:"-"`
 }
 
 // TokenUsage Represents the token usage of chat model request.
