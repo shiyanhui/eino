@@ -25,6 +25,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/nikolalohinski/gonja"
 	"github.com/nikolalohinski/gonja/config"
@@ -114,6 +115,8 @@ type FunctionCall struct {
 	Name string `json:"name,omitempty"`
 	// Arguments is the arguments to call the function with, in JSON format.
 	Arguments string `json:"arguments,omitempty"`
+
+	ParsedArguments any `json:"-"`
 }
 
 // ToolCall is the tool call in a message.
@@ -131,6 +134,14 @@ type ToolCall struct {
 
 	// Extra is used to store extra information for the tool call.
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// IsServerSide indicates if this tool call was executed server-side by the provider.
+	// When true, the client should skip execution and use ServerResult directly.
+	IsServerSide bool `json:"-"`
+
+	// ServerResult holds the result when IsServerSide is true.
+	// It implements ToolInvocationResult interface for consistent handling.
+	ServerResult ToolInvocationResult `json:"-"`
 }
 
 // ImageURLDetail is the detail of the image url.
@@ -482,6 +493,43 @@ type Message struct {
 
 	// customized information for model implementation
 	Extra map[string]any `json:"extra,omitempty"`
+
+	// ID is the id of the message.
+	ID string `json:"-"`
+	// StreamID is the id for a stream call.
+	StreamID string `json:"-"`
+	// DisplayContent is the displayed content int the ui.
+	DisplayContent string `json:"-"`
+	// Only for ToolMessage. ToolCallResult is the result of the tool call.
+	ToolCallResult ToolInvocationResult `json:"-"`
+	// AccumulatedCompressedContent is the compressed content for all the previous messages.
+	AccumulatedCompressedContent string `json:"-"`
+	// AccumulatedCompressedResponseMeta is the compressed response meta for the AccumulatedCompressedContent.
+	AccumulatedCompressedResponseMeta *ResponseMeta `json:"-"`
+	// CommitIDs is the git commit ids for all projects, key is project_name, value is commit_id
+	CommitIDs map[string]string `json:"-"`
+	// IsInvalidToolCall indicates whether this message is invalid. (e.g. Invalid toolcall arguments)
+	IsInvalidToolCall bool `json:"-"`
+	// IsError indicates whether the message is an error message(it's a result). The error message is saved to the Content.
+	IsError bool `json:"-"`
+	// SourceType indicates who produced this message when Role is User.
+	// "user" (MessageSourceUser) means the real user.
+	// "agent" (MessageSourceAgent) means another agent — SourceName holds the agent profile name.
+	// "system" (MessageSourceSystem) means an internal system message (invisible to user).
+	SourceType MessageSourceType `json:"-"`
+	// SourceName is the agent profile name when SourceType is MessageSourceAgent.
+	SourceName string `json:"-"`
+	// IsUserMention indicates this is an @mention routing message from a real user.
+	// Only set to true when Role == User and SourceType == MessageSourceUser.
+	// Persisted to storage for UI display but excluded from LLM context.
+	IsUserMention bool `json:"-"`
+	// IsForkedMessagesEndIndex indicates whether this is the end index of the forked messages
+	IsForkedMessagesEndIndex bool `json:"-"`
+	// SummarizationAttachedIndex is the index that the summarization is attached to.
+	// If SummarizationAttachedIndex is not nil, then this message triggered the summarization.
+	SummarizationAttachedIndex *int `json:"-"`
+	// CreatedAt is when this message is added
+	CreatedAt time.Time `json:"-"`
 }
 
 // TokenUsage Represents the token usage of chat model request.
