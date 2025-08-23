@@ -131,6 +131,22 @@ type ToolCall struct {
 	Extra map[string]any `json:"extra,omitempty"`
 }
 
+func (toolCall ToolCall) Copy() ToolCall {
+	var index *int
+	if toolCall.Index != nil {
+		index = new(int)
+		*index = *toolCall.Index
+	}
+
+	return ToolCall{
+		Index:    index,
+		ID:       toolCall.ID,
+		Type:     toolCall.Type,
+		Function: toolCall.Function,
+		Extra:    toolCall.Extra,
+	}
+}
+
 // ImageURLDetail is the detail of the image url.
 type ImageURLDetail string
 
@@ -315,24 +331,34 @@ type Message struct {
 	Extra map[string]any `json:"extra,omitempty"`
 
 	// ID is the id of the message.
-	ID string `json:"-"`
+	ID string `json:"id,omitempty"`
 	// IsError indicates whether the message is an error message. The error message is saved to the Content.
-	IsError bool `json:"-"`
+	IsError bool `json:"is_error,omitempty"`
 	// CompressedContent is the compressed content of the message.
-	CompressedContent string `json:"-"`
+	CompressedContent string `json:"compressed_content,omitempty"`
 	// CompressedToolCalls is the compressed tool calls of the message.
-	CompressedToolCalls []ToolCall `json:"-"`
+	CompressedToolCalls []ToolCall `json:"compressed_tool_calls,omitempty"`
 	// CompressedResponseMeta is the compressed response meta of the message.
-	CompressedResponseMeta *ResponseMeta `json:"-"`
+	CompressedResponseMeta *ResponseMeta `json:"compressed_response_meta,omitempty"`
 }
 
 func (message *Message) Copy() *Message {
+	var toolCalls []ToolCall
+	for _, toolCall := range message.ToolCalls {
+		toolCalls = append(toolCalls, toolCall.Copy())
+	}
+
+	var compressedToolCalls []ToolCall
+	for _, toolCall := range message.CompressedToolCalls {
+		compressedToolCalls = append(compressedToolCalls, toolCall.Copy())
+	}
+
 	return &Message{
 		Role:                   message.Role,
 		Content:                message.Content,
-		MultiContent:           append([]ChatMessagePart{}, message.MultiContent...),
+		MultiContent:           append([]ChatMessagePart(nil), message.MultiContent...),
 		Name:                   message.Name,
-		ToolCalls:              append([]ToolCall{}, message.ToolCalls...),
+		ToolCalls:              toolCalls,
 		ToolCallID:             message.ToolCallID,
 		ToolName:               message.ToolName,
 		ResponseMeta:           message.ResponseMeta,
@@ -341,7 +367,7 @@ func (message *Message) Copy() *Message {
 		ID:                     message.ID,
 		IsError:                message.IsError,
 		CompressedContent:      message.CompressedContent,
-		CompressedToolCalls:    append([]ToolCall{}, message.CompressedToolCalls...),
+		CompressedToolCalls:    compressedToolCalls,
 		CompressedResponseMeta: message.CompressedResponseMeta,
 	}
 }
