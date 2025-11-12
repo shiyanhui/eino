@@ -84,6 +84,8 @@ type reactConfig struct {
 	agentName string
 
 	maxIterations int
+
+	beforeChatModel, afterChatModel []func(context.Context, *ChatModelAgentState) error
 }
 
 func genToolInfos(ctx context.Context, config *compose.ToolsNodeConfig) ([]*schema.ToolInfo, error) {
@@ -161,18 +163,32 @@ func newReact(ctx context.Context, config *reactConfig) (reactGraph, error) {
 		}
 		st.RemainingIterations--
 
-		st.Messages = append(st.Messages, input...)
+		s := &ChatModelAgentState{Messages: append(st.Messages, input...)}
+		for _, b := range config.beforeChatModel {
+			err = b(ctx, s)
+			if err != nil {
+				return nil, err
+			}
+		}
+		st.Messages = s.Messages
+
 		return st.Messages, nil
 	}
+	modelPostHandle := func(ctx context.Context, input Message, st *State) (Message, error) {
+		s := &ChatModelAgentState{Messages: append(st.Messages, input)}
+		for _, a := range config.afterChatModel {
+			err = a(ctx, s)
+			if err != nil {
+				return nil, err
+			}
+		}
+		st.Messages = s.Messages
+		return input, nil
+	}
 	_ = g.AddChatModelNode(chatModel_, chatModel,
-		compose.WithStatePreHandler(modelPreHandle), compose.WithNodeName(chatModel_))
+		compose.WithStatePreHandler(modelPreHandle), compose.WithStatePostHandler(modelPostHandle), compose.WithNodeName(chatModel_))
 
 	toolPreHandle := func(ctx context.Context, input Message, st *State) (Message, error) {
-		if input != nil {
-			// isn't resume
-			st.Messages = append(st.Messages, input)
-		}
-
 		input = st.Messages[len(st.Messages)-1]
 		if len(config.toolsReturnDirectly) > 0 {
 			for i := range input.ToolCalls {
