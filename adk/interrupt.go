@@ -161,6 +161,8 @@ func init() {
 	schema.RegisterName[*State]("_eino_adk_react_state")
 }
 
+// serialization CheckpointSchema: root checkpoint payload (gob).
+// Any type tagged with `CheckpointSchema:` is persisted and must remain backward compatible.
 type serialization struct {
 	RunCtx *runContext
 	// deprecated: still keep it here for backward compatibility
@@ -171,24 +173,23 @@ type serialization struct {
 }
 
 func (r *Runner) loadCheckPoint(ctx context.Context, checkpointID string) (
-	context.Context, *ResumeInfo, error) {
+	context.Context, *runContext, *ResumeInfo, error) {
 	data, existed, err := r.store.Get(ctx, checkpointID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get checkpoint from store: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to get checkpoint from store: %w", err)
 	}
 	if !existed {
-		return nil, nil, fmt.Errorf("checkpoint[%s] not exist", checkpointID)
+		return nil, nil, nil, fmt.Errorf("checkpoint[%s] not exist", checkpointID)
 	}
 
 	s := &serialization{}
 	err = gob.NewDecoder(bytes.NewReader(data)).Decode(s)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to decode checkpoint: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to decode checkpoint: %w", err)
 	}
 	ctx = core.PopulateInterruptState(ctx, s.InterruptID2Address, s.InterruptID2State)
-	ctx = setRunCtx(ctx, s.RunCtx)
 
-	return ctx, &ResumeInfo{
+	return ctx, s.RunCtx, &ResumeInfo{
 		EnableStreaming: s.EnableStreaming,
 		InterruptInfo:   s.Info,
 	}, nil
