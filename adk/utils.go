@@ -89,6 +89,10 @@ func setAutomaticClose(e *AgentEvent) {
 	e.Output.MessageOutput.MessageStream.SetAutomaticClose()
 }
 
+// getMessageFromWrappedEvent extracts the message from an AgentEvent.
+// If the stream contains an error chunk, this function returns (nil, err) and
+// sets StreamErr to prevent re-consumption. The nil message ensures that
+// failed stream responses are not included in subsequent agents' context windows.
 func getMessageFromWrappedEvent(e *agentEventWrapper) (Message, error) {
 	if e.AgentEvent.Output == nil || e.AgentEvent.Output.MessageOutput == nil {
 		return nil, nil
@@ -100,6 +104,10 @@ func getMessageFromWrappedEvent(e *agentEventWrapper) (Message, error) {
 
 	if e.concatenatedMessage != nil {
 		return e.concatenatedMessage, nil
+	}
+
+	if e.StreamErr != nil {
+		return nil, e.StreamErr
 	}
 
 	e.mu.Lock()
@@ -120,7 +128,12 @@ func getMessageFromWrappedEvent(e *agentEventWrapper) (Message, error) {
 			if err == io.EOF {
 				break
 			}
-
+			e.StreamErr = err
+			// Replace the stream with successfully received messages only (no error at the end).
+			// The error is preserved in StreamErr for users to check.
+			// We intentionally exclude the error from the new stream to ensure gob encoding
+			// compatibility, as the stream may be consumed during serialization.
+			e.AgentEvent.Output.MessageOutput.MessageStream = schema.StreamReaderFromArray(msgs)
 			return nil, err
 		}
 
@@ -137,6 +150,8 @@ func getMessageFromWrappedEvent(e *agentEventWrapper) (Message, error) {
 		var err error
 		e.concatenatedMessage, err = schema.ConcatMessages(msgs)
 		if err != nil {
+			e.StreamErr = err
+			e.AgentEvent.Output.MessageOutput.MessageStream = schema.StreamReaderFromArray(msgs)
 			return nil, err
 		}
 	}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"runtime/debug"
 	"strings"
 
@@ -231,6 +232,11 @@ func (a *flowAgent) genAgentInput(ctx context.Context, runCtx *runContext, skipT
 
 		msg, err := getMessageFromWrappedEvent(event)
 		if err != nil {
+			var retryErr *WillRetryError
+			if errors.As(err, &retryErr) {
+				log.Printf("failed to get message from event, but will retry: %v", err)
+				continue
+			}
 			return nil, err
 		}
 

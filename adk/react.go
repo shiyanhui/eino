@@ -111,6 +111,8 @@ type reactConfig struct {
 	maxIterations int
 
 	beforeChatModel, afterChatModel []func(context.Context, *ChatModelAgentState) error
+
+	modelRetryConfig *ModelRetryConfig
 }
 
 func genToolInfos(ctx context.Context, config *compose.ToolsNodeConfig) ([]*schema.ToolInfo, error) {
@@ -171,7 +173,12 @@ func newReact(ctx context.Context, config *reactConfig) (reactGraph, error) {
 		return nil, err
 	}
 
-	chatModel, err := config.model.WithTools(toolsInfo)
+	var baseModel model.ToolCallingChatModel = config.model
+	if config.modelRetryConfig != nil {
+		baseModel = newRetryChatModel(config.model, config.modelRetryConfig)
+	}
+
+	chatModel, err := baseModel.WithTools(toolsInfo)
 	if err != nil {
 		return nil, err
 	}

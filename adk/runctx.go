@@ -49,7 +49,17 @@ type agentEventWrapper struct {
 	*AgentEvent
 	mu                  sync.Mutex
 	concatenatedMessage Message
-	ts                  int64
+	// TS is the timestamp (in nanoseconds) when this event was created.
+	// It is primarily used by the laneEvents mechanism to order events
+	// from different agents in a multi-agent flow.
+	TS int64
+	// StreamErr stores the error message if the MessageStream contained an error.
+	// This field guards against multiple calls to getMessageFromWrappedEvent
+	// when the stream has already been consumed and errored.
+	// Normally when StreamErr happens, the Agent will return with the error,
+	// unless retry is configured for the agent generating this stream, in which case
+	// this StreamErr will be of type WillRetryError (indicating retry is pending).
+	StreamErr error
 }
 
 type otherAgentEventWrapperForEncode agentEventWrapper
@@ -115,7 +125,7 @@ func GetSessionValue(ctx context.Context, key string) (any, bool) {
 }
 
 func (rs *runSession) addEvent(event *AgentEvent) {
-	wrapper := &agentEventWrapper{AgentEvent: event, ts: time.Now().UnixNano()}
+	wrapper := &agentEventWrapper{AgentEvent: event, TS: time.Now().UnixNano()}
 	// If LaneEvents is not nil, we are in a parallel lane.
 	// Append to the lane's local event slice (lock-free).
 	if rs.LaneEvents != nil {
@@ -268,7 +278,7 @@ func joinRunCtxs(parentCtx context.Context, childCtxs ...context.Context) {
 
 	// 2. Sort the collected events by their creation timestamp for chronological order.
 	sort.Slice(newEvents, func(i, j int) bool {
-		return newEvents[i].ts < newEvents[j].ts
+		return newEvents[i].TS < newEvents[j].TS
 	})
 
 	// 3. Commit the sorted events to the parent.
