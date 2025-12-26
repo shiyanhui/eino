@@ -65,7 +65,7 @@ func (a *flowAgent) deepCopy() *flowAgent {
 	return ret
 }
 
-func SetSubAgents(ctx context.Context, agent Agent, subAgents []Agent) (Agent, error) {
+func SetSubAgents(ctx context.Context, agent Agent, subAgents []Agent) (ResumableAgent, error) {
 	return setSubAgents(ctx, agent, subAgents)
 }
 
@@ -334,7 +334,17 @@ func (a *flowAgent) Resume(ctx context.Context, info *ResumeInfo, opts ...AgentR
 
 	subAgent := a.getAgent(ctx, nextAgentName)
 	if subAgent == nil {
-		return genErrorIter(fmt.Errorf("failed to resume agent: agent '%s' not found", nextAgentName))
+		// the inner agent wrapped by flowAgent may be ANY agent, including flowAgent,
+		// AgentWithDeterministicTransferTo, or any other custom agent user defined,
+		// or any combinations of the above in any order,
+		// that ultimately wraps the flowAgent with sub-agents
+		// We need to go through these wrappers to reach the flowAgent with sub-agents.
+		if len(a.subAgents) == 0 {
+			if ra, ok := a.Agent.(ResumableAgent); ok {
+				return ra.Resume(ctx, info, opts...)
+			}
+		}
+		return genErrorIter(fmt.Errorf("failed to resume agent: agent '%s' not found from flowAgent '%s'", nextAgentName, a.Name(ctx)))
 	}
 
 	return subAgent.Resume(ctx, info, opts...)
