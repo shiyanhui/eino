@@ -258,7 +258,7 @@ func initRunCtx(ctx context.Context, agentName string, input *AgentInput) (conte
 		runCtx = &runContext{Session: newRunSession()}
 	}
 
-	runCtx.RunPath = append(runCtx.RunPath, RunStep{agentName})
+	runCtx.RunPath = append(runCtx.RunPath, RunStep{agentName: agentName})
 	if runCtx.isRoot() && input != nil {
 		runCtx.RootInput = input
 	}
@@ -366,7 +366,7 @@ func updateRunPathOnly(ctx context.Context, agentNames ...string) context.Contex
 	}
 
 	for _, agentName := range agentNames {
-		runCtx.RunPath = append(runCtx.RunPath, RunStep{agentName})
+		runCtx.RunPath = append(runCtx.RunPath, RunStep{agentName: agentName})
 	}
 
 	return setRunCtx(ctx, runCtx)

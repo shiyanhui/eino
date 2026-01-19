@@ -382,19 +382,11 @@ func (a *flowAgent) run(
 			break
 		}
 
-		// RunPath ownership: the eino framework prepends parent context exactly once.
-		// Custom agents should NOT include parent segments in event.RunPath.
-		// Any event.RunPath provided by custom agents is treated as relative child provenance.
-		// STRONG RECOMMENDATION: Do NOT set RunPath in custom agents unless you truly need to add
-		//   relative child provenance; never add parent/current segments. Incorrect settings will
-		//   duplicate head segments after merge and cause non-recording.
-		// Here we merge: framework runCtx.RunPath + custom-provided event.RunPath.
-		if len(event.RunPath) > 0 {
-			rp := make([]RunStep, 0, len(runCtx.RunPath)+len(event.RunPath))
-			rp = append(rp, runCtx.RunPath...)
-			rp = append(rp, event.RunPath...)
-			event.RunPath = rp
-		} else {
+		// RunPath ownership: the eino framework sets RunPath exactly once.
+		// If event.RunPath is already set (e.g., by agentTool), we don't modify it.
+		// If event.RunPath is nil/empty, we set it to the current runCtx.RunPath.
+		// This ensures RunPath is set exactly once and not duplicated.
+		if len(event.RunPath) == 0 {
 			event.AgentName = a.Name(ctx)
 			event.RunPath = runCtx.RunPath
 		}

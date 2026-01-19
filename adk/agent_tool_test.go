@@ -993,60 +993,6 @@ func TestSequentialWorkflow_WithChatModelAgentTool_NestedRunPathAndSessions(t *t
 	}
 }
 
-type badAgent struct{ parent string }
-
-func (b *badAgent) Name(context.Context) string        { return "bad" }
-func (b *badAgent) Description(context.Context) string { return "misuse" }
-func (b *badAgent) Run(ctx context.Context, input *AgentInput, _ ...AgentRunOption) *AsyncIterator[*AgentEvent] {
-	it, gen := NewAsyncIteratorPair[*AgentEvent]()
-	go func() {
-		ev := EventFromMessage(schema.AssistantMessage("x", nil), nil, schema.Assistant, "")
-		ev.RunPath = []RunStep{{agentName: b.parent}, {agentName: "bad"}}
-		gen.Send(ev)
-		gen.Close()
-	}()
-	return it
-}
-
-func TestRunPathMisuse_DuplicatedHeadAndNoParentRecording(t *testing.T) {
-	ctx := context.Background()
-	input := &AgentInput{Messages: []Message{schema.UserMessage("q")}}
-	ctx, outerRunCtx := initRunCtx(ctx, "outer", input)
-	fa := toFlowAgent(ctx, &badAgent{parent: "outer"})
-
-	it := fa.Run(ctx, input)
-	var last *AgentEvent
-	for {
-		ev, ok := it.Next()
-		if !ok {
-			break
-		}
-		last = ev
-	}
-	if last == nil {
-		t.Fatalf("no event emitted")
-	}
-
-	got := make([]string, len(last.RunPath))
-	for i := range last.RunPath {
-		got[i] = last.RunPath[i].agentName
-	}
-	want := []string{"outer", "bad", "outer", "bad"}
-	if len(got) != len(want) {
-		t.Fatalf("unexpected runPath len: got %d want %d: %+v", len(got), len(want), got)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("runPath mismatch at %d: got %s want %s; full: %+v", i, got[i], want[i], got)
-		}
-	}
-
-	evs := outerRunCtx.Session.getEvents()
-	if len(evs) != 0 {
-		t.Fatalf("outer session should not record misused event, recorded=%d", len(evs))
-	}
-}
-
 func TestRunPathGating_IgnoresInnerExitAndAllowsOutput(t *testing.T) {
 	ctx := context.Background()
 
