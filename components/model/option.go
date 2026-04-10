@@ -42,6 +42,19 @@ type Options struct {
 	ModelOptionsList []*ModelOptions
 	// Extra options
 	Extra map[string]any
+
+	// SkipMessageCacheWrite instructs the provider to omit cache_control markers
+	// from all message-level content blocks. System prompt cache is unaffected.
+	// Used by summarize requests to avoid writing message cache that is immediately
+	// invalidated after each summarize cycle.
+	SkipMessageCacheWrite bool
+}
+
+// WithSkipMessageCacheWrite returns an Option that sets SkipMessageCacheWrite.
+func WithSkipMessageCacheWrite(skip bool) Option {
+	return Option{apply: func(opts *Options) {
+		opts.SkipMessageCacheWrite = skip
+	}}
 }
 
 // Option is the call option for ChatModel component.
