@@ -30,14 +30,15 @@ func WithAllowedToolNames(allowedToolNames []string) Option {
 	}
 }
 
-// WithSkipMessageCacheWrite returns an Option that sets SkipMessageCacheWrite.
-// When true, the provider omits cache_control markers from all message-level
-// content blocks. System prompt cache is unaffected. Used by summarize requests
-// to avoid writing message cache that is immediately invalidated after each
-// summarize cycle.
-func WithSkipMessageCacheWrite(skip bool) Option {
+// WithMessageCacheTTL returns an Option that sets MessageCacheTTL.
+// Controls the cache_control TTL for message-level content block breakpoints.
+// System prompt cache is unaffected and uses the profile-level TTL.
+// Valid values: "none" (omit cache markers), "5m" (5-minute TTL), "1h" (1-hour TTL).
+// Used by summarize requests via "none" to avoid writing message cache that is
+// immediately invalidated after each summarize cycle.
+func WithMessageCacheTTL(ttl string) Option {
 	return Option{apply: func(opts *Options) {
-		opts.SkipMessageCacheWrite = skip
+		opts.MessageCacheTTL = ttl
 	}}
 }
 

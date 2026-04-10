@@ -43,11 +43,14 @@ type Options struct {
 	// Extra options
 	Extra map[string]any
 
-	// SkipMessageCacheWrite instructs the provider to omit cache_control markers
-	// from all message-level content blocks. System prompt cache is unaffected.
-	// Used by summarize requests to avoid writing message cache that is immediately
-	// invalidated after each summarize cycle.
-	SkipMessageCacheWrite bool
+	// MessageCacheTTL controls the cache_control TTL for message-level content
+	// block breakpoints. System prompt cache is handled separately by the provider
+	// using the profile-level TTL.
+	//   - ""     = not set (provider decides default)
+	//   - "none" = omit cache_control markers from messages
+	//   - "5m"   = 5-minute TTL
+	//   - "1h"   = 1-hour TTL
+	MessageCacheTTL string
 }
 
 // Option is the call option for ChatModel component.
