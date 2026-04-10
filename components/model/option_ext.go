@@ -30,6 +30,17 @@ func WithAllowedToolNames(allowedToolNames []string) Option {
 	}
 }
 
+// WithSkipMessageCacheWrite returns an Option that sets SkipMessageCacheWrite.
+// When true, the provider omits cache_control markers from all message-level
+// content blocks. System prompt cache is unaffected. Used by summarize requests
+// to avoid writing message cache that is immediately invalidated after each
+// summarize cycle.
+func WithSkipMessageCacheWrite(skip bool) Option {
+	return Option{apply: func(opts *Options) {
+		opts.SkipMessageCacheWrite = skip
+	}}
+}
+
 func (options *Options) ToOptionList() []Option {
 	if options == nil {
 		return nil

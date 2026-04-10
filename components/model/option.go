@@ -50,13 +50,6 @@ type Options struct {
 	SkipMessageCacheWrite bool
 }
 
-// WithSkipMessageCacheWrite returns an Option that sets SkipMessageCacheWrite.
-func WithSkipMessageCacheWrite(skip bool) Option {
-	return Option{apply: func(opts *Options) {
-		opts.SkipMessageCacheWrite = skip
-	}}
-}
-
 // Option is the call option for ChatModel component.
 type Option struct {
 	apply func(opts *Options)
