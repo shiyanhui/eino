@@ -34,10 +34,10 @@ func (message *Message) Copy() *Message {
 		toolCalls = append(toolCalls, toolCall.Copy())
 	}
 
-	var summarizationAttachedIndex *int
-	if message.SummarizationAttachedIndex != nil {
-		summarizationAttachedIndex = new(int)
-		*summarizationAttachedIndex = *message.SummarizationAttachedIndex
+	var compactAttachedIndex *int
+	if message.CompactAttachedIndex != nil {
+		compactAttachedIndex = new(int)
+		*compactAttachedIndex = *message.CompactAttachedIndex
 	}
 
 	return &Message{
@@ -67,7 +67,8 @@ func (message *Message) Copy() *Message {
 		SourceName:                        message.SourceName,
 		IsUserMention:                     message.IsUserMention,
 		IsForkedMessagesEndIndex:          message.IsForkedMessagesEndIndex,
-		SummarizationAttachedIndex:        summarizationAttachedIndex,
+		CompactAttachedIndex:              compactAttachedIndex,
+		CompressAttachedIndices:           append([]int(nil), message.CompressAttachedIndices...),
 		ModelName:                         message.ModelName,
 		CreatedAt:                         message.CreatedAt,
 		ToolResultOffloadPath:             message.ToolResultOffloadPath,

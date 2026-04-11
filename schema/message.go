@@ -527,9 +527,6 @@ type Message struct {
 	IsUserMention bool `json:"-"`
 	// IsForkedMessagesEndIndex indicates whether this is the end index of the forked messages
 	IsForkedMessagesEndIndex bool `json:"-"`
-	// SummarizationAttachedIndex is the index that the summarization is attached to.
-	// If SummarizationAttachedIndex is not nil, then this message triggered the summarization.
-	SummarizationAttachedIndex *int `json:"-"`
 	// The full model name for assistant message.
 	ModelName string `json:"-"`
 
@@ -537,7 +534,9 @@ type Message struct {
 	// Non-empty means Content has been replaced by the absolute file path string.
 	ToolResultOffloadPath string `json:"-"`
 	// IsCompactIndex indicates this message is the last compacted message of a compact run.
-	IsCompactIndex bool `json:"-"`
+	IsCompactIndex         bool  `json:"-"`
+	CompactAttachedIndex   *int  `json:"-"`
+	CompressAttachedIndices []int `json:"-"`
 	// CreatedAt is when this message is added
 	CreatedAt time.Time `json:"-"`
 }
